@@ -1,31 +1,37 @@
 import { chromium } from 'playwright';
+import fs from 'fs';
 
-const browser = await chromium.launch(
-    { headless: true }
-);
+(async () => {
+    const browser = await chromium.launch({ headless: true }); // Ejecutar en modo headless
+    const page = await browser.newPage();
+    await page.goto('https://www.superselectos.com/');
 
-const page = await browser.newPage();
+    // Esperar a que los productos se carguen en la página
+    await page.waitForSelector('.prod-box-inner');
 
-await page.goto('https://www.superselectos.com/');
-
-const products = await page.$$eval (
-    'prod-box-inner',
-    (results) => 
+    const products = await page.$$eval('.prod-box-inner', (results) =>
         results.map((el) => {
-            const title = el.querySelector('prod-nombre')?.innerText;
-            const price = el.querySelector('precio')?.innerText;
+            const titleElement = el.querySelector('.prod-nombre');
+            const priceElement = el.querySelector('.precio');
+            const imageElement = el.querySelector('.prod-images img');
 
-            if (!title || !price) return null;
+            const title = titleElement ? titleElement.innerText.trim() : null;
+            const price = priceElement ? priceElement.innerText.trim() : null;
+            const image = imageElement ? imageElement.getAttribute('src') : null;
 
-            const image = el.querySelector('prod-images').getAttribute('src');
+            if (!title || !price || !image) return null;
 
             return {
                 title,
                 price,
-                image
+                image,
             };
-        })
-);
+        }).filter(product => product !== null)
+    );
 
-console.log(products);
-await browser.close();
+    // Exportar el resultado a un archivo .json
+    fs.writeFileSync('products.json', JSON.stringify(products, null, 2), 'utf-8');
+    console.log('Archivo JSON creado: products.json');
+
+    await browser.close();
+})();
