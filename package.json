@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "playwright": "^1.47.2"
+    "playwright": "^1.47.2",
+    "scamjs": "file:"
   }
 }
